@@ -1,0 +1,26 @@
+{
+    "name": "marcusjian/php-kata",
+    "description": "shell project for php testing",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Marcus Jian",
+            "email": "renyou815@example.com"
+        }
+    ],
+    "require": {
+        "php": "^7.4.0",
+        "phpunit/phpunit": "^8"
+    },
+    "autoload": {
+        "psr-4": {
+            "marcusjian\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
+        }
+    },
+    "minimum-stability": "dev"
+}
