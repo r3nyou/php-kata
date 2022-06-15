@@ -4,8 +4,6 @@ namespace marcusjian\BowlingGame;
 
 class Game
 {
-    private int $roll = 0;
-
     private array $rolls = [];
 
     public function bulkRoll(int ...$pins): void
@@ -18,7 +16,6 @@ class Game
     public function roll(int $pin): void
     {
         $this->rolls[] = $pin;
-        $this->roll++;
     }
 
     public function score(): int
