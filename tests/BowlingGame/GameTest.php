@@ -27,6 +27,16 @@ class GameTest extends TestCase
     }
     
     // TODO 5,5,3,0... -> 13+3
+    public function testShouldScoreGameOfSpare()
+    {
+        $this->game->roll(5);
+        $this->game->roll(5);
+        $this->game->roll(3);
+        $this->roll(17, 0);
+
+        $this->assertEquals(16, $this->game->score());
+    }
+
     // TODO 10,3,5,0...-> 18+8
 
 //    public function testExample()
