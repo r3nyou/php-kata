@@ -16,24 +16,20 @@ class GameTest extends TestCase
 
     public function testShouldScoreMissGame()
     {
-        $this->roll(20, 0);
+        $this->game->bulkRoll(0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0);
         $this->assertEquals(0, $this->game->score());
     }
     
     public function testShouldScoreGameOfOnes()
     {
-        $this->roll(20, 1);
+        $this->game->bulkRoll(1,1, 1,1, 1,1, 1,1, 1,1, 1,1, 1,1, 1,1, 1,1, 1,1);
         $this->assertEquals(20, $this->game->score());
     }
     
     // TODO 5,5,3,0... -> 13+3
     public function testShouldScoreGameOfSpare()
     {
-        $this->game->roll(5);
-        $this->game->roll(5);
-        $this->game->roll(3);
-        $this->roll(17, 0);
-
+        $this->game->bulkRoll(5,5, 3,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0);
         $this->assertEquals(16, $this->game->score());
     }
 
@@ -45,10 +41,4 @@ class GameTest extends TestCase
 //        $game->roll(0);
 //        $this->assertEquals(0, $game->score());
 //    }
-    protected function roll(int $times, int $pin): void
-    {
-        for ($i = 0; $i < $times; $i++) {
-            $this->game->roll($pin);
-        }
-    }
 }
