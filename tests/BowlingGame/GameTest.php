@@ -34,6 +34,11 @@ class GameTest extends TestCase
     }
 
     // TODO 10,3,5,0...-> 18+8
+    public function testShouldScoreGameOfStrike()
+    {
+        $this->game->bulkRoll(10, 3,5, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0);
+        $this->assertEquals(26, $this->game->score());
+    }
 
 //    public function testExample()
 //    {

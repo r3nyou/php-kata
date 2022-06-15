@@ -26,7 +26,10 @@ class Game
         $score = 0;
         $cursor = 0;
         for ($frame = 0; $frame < 10; $frame++) {
-            if ($this->isSpare($cursor)) {
+            if ($this->isStrike($cursor)) {
+                $score += (10 + $this->rolls[$cursor+1] + $this->rolls[$cursor+2]);
+                $cursor++;
+            } elseif ($this->isSpare($cursor)) {
                 $score += (10 + $this->rolls[$cursor+2]);
                 $cursor += 2;
             } else {
@@ -40,5 +43,10 @@ class Game
     protected function isSpare(int $cursor): bool
     {
         return 10 === $this->rolls[$cursor] + $this->rolls[$cursor + 1];
+    }
+
+    protected function isStrike(int $cursor): bool
+    {
+        return $this->rolls[$cursor] == 10;
     }
 }
