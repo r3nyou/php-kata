@@ -7,22 +7,23 @@ use PHPUnit\Framework\TestCase;
 
 class GameTest extends TestCase
 {
+    private $game;
+
+    public function setUp(): void
+    {
+        $this->game = new Game();
+    }
+
     public function testShouldScoreMissGame()
     {
-        $game = new Game();
-        for ($i = 0; $i < 20; $i++) {
-            $game->roll(0);
-        }
-        $this->assertEquals(0, $game->score());
+        $this->roll(20, 0);
+        $this->assertEquals(0, $this->game->score());
     }
     
     public function testShouldScoreGameOfOnes()
     {
-        $game = new Game();
-        for ($i = 0; $i < 20; $i++) {
-            $game->roll(1);
-        }
-        $this->assertEquals(20, $game->score());
+        $this->roll(20, 1);
+        $this->assertEquals(20, $this->game->score());
     }
     
     // TODO 5,5,3,0... -> 13+3
@@ -34,4 +35,10 @@ class GameTest extends TestCase
 //        $game->roll(0);
 //        $this->assertEquals(0, $game->score());
 //    }
+    protected function roll(int $times, int $pin): void
+    {
+        for ($i = 0; $i < $times; $i++) {
+            $this->game->roll($pin);
+        }
+    }
 }
