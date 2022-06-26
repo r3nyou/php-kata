@@ -4,9 +4,10 @@ namespace marcusjian\DI;
 
 class Container
 {
-    private array $components = [];
-
-    private array $componentTypes = [];
+    /**
+     * @var array<string, Provider>
+     */
+    private array $providers = [];
 
     /**
      * @param string $className
@@ -15,20 +16,25 @@ class Container
      */
     public function bind(string $className, $instance): void
     {
-        if (is_object($instance)) {
-            $this->components[$className] = $instance;
-        } else {
-            $this->componentTypes[$className] = $instance;
-        }
+        $this->providers[$className] = new class($instance) implements Provider
+        {
+            /** @var string|object */
+            private $instance;
+
+            public function __construct($instance)
+            {
+                $this->instance = $instance;
+            }
+
+            public function get()
+            {
+                return is_object($this->instance) ? $this->instance : (new $this->instance);
+            }
+        };
     }
 
     public function get(string $className): Object
     {
-        if (key_exists($className, $this->components)) {
-            return $this->components[$className];
-        }
-
-        $instance = $this->componentTypes[$className];
-        return new $instance;
+        return $this->providers[$className]->get();
     }
 }

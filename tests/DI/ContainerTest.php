@@ -18,7 +18,6 @@ class ContainerTest extends TestCase
         $this->assertSame($instance, $container->get(Component::class));
     }
 
-    // TODO class default construct
     public function testShouldBindTypeToClass()
     {
         $container = new Container();
