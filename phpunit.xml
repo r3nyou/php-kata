@@ -4,5 +4,8 @@
         <testsuite name="bowling-game">
             <directory>tests/BowlingGame</directory>
         </testsuite>
+        <testsuite name="DI">
+            <directory>tests/DI</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
