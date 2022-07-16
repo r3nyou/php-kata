@@ -2,6 +2,9 @@
 
 namespace marcusjian\DI;
 
+use ReflectionClass;
+use ReflectionParameter;
+
 class Context
 {
     /**
@@ -15,7 +18,7 @@ class Context
      *
      * @return void
      */
-    public function bind(string $type, object $instance): void
+    public function bindInstance(string $type, object $instance): void
     {
         $this->providers[$type] = new class($instance) implements Provider {
             public function __construct($instance)
@@ -30,23 +33,35 @@ class Context
         };
     }
 
-    public function bindInstance(string $type, string $implementation)
+    public function bind(string $type, string $implementation)
     {
-        $this->providers[$type] = new class($implementation) implements Provider {
-            public function __construct($implementation)
+        $provider = new class($implementation, $this) implements Provider {
+            public function __construct($implementation, Context $context)
             {
                 $this->implementation = $implementation;
+                $this->context = $context;
             }
 
             public function get()
             {
-                return new $this->implementation;
+                $reflectionClass = new ReflectionClass($this->implementation);
+                $dependencies = array_map(function (ReflectionParameter $parameter) {
+                    $type = $parameter->getClass()->getName();
+                    return $this->context->get($type) ?? new $type;
+                }, $reflectionClass->getConstructor()->getParameters());
+
+                return $reflectionClass->newInstanceArgs($dependencies);
             }
         };
+
+        $this->providers[$type] = $provider;
     }
 
-    public function get(string $type): object
+    public function get(string $type): ?object
     {
-        return $this->providers[$type]->get();
+        if (array_key_exists($type, $this->providers)) {
+            return $this->providers[$type]->get();
+        }
+        return null;
     }
 }

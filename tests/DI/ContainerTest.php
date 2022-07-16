@@ -21,17 +21,23 @@ class ContainerTest extends TestCase
      * 3. life cycle
      */
 
+    private Context $context;
+
+    public function setUp(): void
+    {
+        $this->context = new Context();
+    }
+
     /*
      * 1. component construction
      * TODO: instance
      */
     public function testShouldBindTypeToSpecificInstance()
     {
-        $context = new Context();
         $instance = new class implements Component{};
-        $context->bind(Component::class, $instance);
+        $this->context->bindInstance(Component::class, $instance);
 
-        $this->assertSame($instance, $context->get(Component::class));
+        $this->assertSame($instance, $this->context->get(Component::class));
     }
 
     /*
@@ -42,11 +48,47 @@ class ContainerTest extends TestCase
      */
     public function testShouldBindTypeToClass()
     {
-        $context = new Context();
-        $context->bindInstance(Component::class, ComponentWithDefaultConstruct::class);
-        $instance = $context->get(Component::class);
+        $this->context->bind(Component::class, ComponentWithDefaultConstruct::class);
+        $instance = $this->context->get(Component::class);
 
         $this->assertNotNull($instance);
         $this->assertTrue($instance instanceof Component);
+    }
+
+    /*
+     * 1. component construction
+     * TODO: instance
+     *   a. constructor
+     *     2. with dependency
+     */
+    public function testShouldBindTypeToAClassWithInjectConstruction()
+    {
+        $dependency = new class implements Dependency{};
+
+        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->context->bindInstance(Dependency::class, $dependency);
+
+        /** @var ComponentWithInjectConstruct $instance */
+        $instance = $this->context->get(Component::class);
+        $this->assertNotNull($instance);
+        $this->assertSame($dependency, $instance->getDependency());
+    }
+}
+
+interface Dependency {
+
+}
+
+class ComponentWithInjectConstruct implements Component {
+    private Dependency $dependency;
+
+    public function __construct(Dependency $dependency)
+    {
+        $this->dependency = $dependency;
+    }
+
+    public function getDependency(): Dependency
+    {
+        return $this->dependency;
     }
 }
