@@ -6,6 +6,7 @@ use marcusjian\DI\Component;
 use marcusjian\DI\ComponentWithDefaultConstruct;
 use marcusjian\DI\Context;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 class ContainerTest extends TestCase
 {
@@ -73,13 +74,39 @@ class ContainerTest extends TestCase
         $this->assertNotNull($instance);
         $this->assertSame($dependency, $instance->getDependency());
     }
+
+    /*
+     * 1. component construction
+     * TODO: instance
+     *   a. constructor
+     *     3. A -> B -> C
+     */
+    public function testShouldBindTypeToAClassWithTransitiveDependencies()
+    {
+        $dependency = new stdClass();
+
+        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->context->bind(Dependency::class, DependencyWithInjectConstructor::class);
+        $this->context->bindInstance(stdClass::class, $dependency);
+
+        /** @var ComponentWithInjectConstruct $instance */
+        $instance = $this->context->get(Component::class);
+        $this->assertNotNull($instance);
+
+        /** @var DependencyWithInjectConstructor $dependencyWithInjectConstructor */
+        $dependencyWithInjectConstructor = $instance->getDependency();
+        $this->assertNotNull($dependencyWithInjectConstructor);
+
+        $this->assertSame($dependency, $dependencyWithInjectConstructor->getDependency());
+    }
 }
 
 interface Dependency {
 
 }
 
-class ComponentWithInjectConstruct implements Component {
+class ComponentWithInjectConstruct implements Component
+{
     private Dependency $dependency;
 
     public function __construct(Dependency $dependency)
@@ -88,6 +115,21 @@ class ComponentWithInjectConstruct implements Component {
     }
 
     public function getDependency(): Dependency
+    {
+        return $this->dependency;
+    }
+}
+
+class DependencyWithInjectConstructor implements Dependency
+{
+    private stdClass $dependency;
+
+    public function __construct(stdClass $dependency)
+    {
+        $this->dependency = $dependency;
+    }
+
+    public function getDependency(): stdClass
     {
         return $this->dependency;
     }
