@@ -5,14 +5,9 @@ namespace marcusjian\DI;
 class Context
 {
     /**
-     * @var array<string,object>
+     * @var array<string,Provider>
      */
-    private array $components = [];
-
-    /**
-     * @var array<string,object>
-     */
-    private array $componentImplementations = [];
+    private array $providers = [];
 
     /**
      * @param string $type
@@ -22,21 +17,36 @@ class Context
      */
     public function bind(string $type, object $instance): void
     {
-        $this->components[$type] = $instance;
+        $this->providers[$type] = new class($instance) implements Provider {
+            public function __construct($instance)
+            {
+                $this->instance = $instance;
+            }
+
+            public function get()
+            {
+                return $this->instance;
+            }
+        };
     }
 
     public function bindInstance(string $type, string $implementation)
     {
-        $this->componentImplementations[$type] = $implementation;
+        $this->providers[$type] = new class($implementation) implements Provider {
+            public function __construct($implementation)
+            {
+                $this->implementation = $implementation;
+            }
+
+            public function get()
+            {
+                return new $this->implementation;
+            }
+        };
     }
 
     public function get(string $type): object
     {
-        if (array_key_exists($type, $this->components)) {
-            return $this->components[$type];
-        }
-
-        $implementation = $this->componentImplementations[$type];
-        return new $implementation;
+        return $this->providers[$type]->get();
     }
 }
