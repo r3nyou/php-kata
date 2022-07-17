@@ -113,6 +113,11 @@ class ContainerTest extends TestCase
         $this->expectException(DependencyNotFoundException::class);
         $this->context->get(Component::class);
     }
+
+    public function testShouldReturnNullIfComponentNotDefined()
+    {
+        $this->assertNull($this->context->get(Component::class));
+    }
 }
 
 interface Component
