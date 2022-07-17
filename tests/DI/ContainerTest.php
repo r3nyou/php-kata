@@ -3,6 +3,7 @@
 namespace Tests\DI;
 
 use marcusjian\DI\Context;
+use marcusjian\DI\CyclicDependenciesException;
 use marcusjian\DI\DependencyNotFoundException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
@@ -118,6 +119,15 @@ class ContainerTest extends TestCase
     {
         $this->assertNull($this->context->get(Component::class));
     }
+
+    public function testShouldThrowExceptionIfCyclicDependenciesFound()
+    {
+        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->context->bind(Dependency::class, DependencyDependedOnComponent::class);
+
+        $this->expectException(CyclicDependenciesException::class);
+        $this->context->get(Component::class);
+    }
 }
 
 interface Component
@@ -165,5 +175,15 @@ class DependencyWithInjectConstructor implements Dependency
     public function getDependency(): stdClass
     {
         return $this->dependency;
+    }
+}
+
+class DependencyDependedOnComponent implements Dependency
+{
+    private Component $component;
+
+    public function __construct(Component $component)
+    {
+        $this->component = $component;
     }
 }
