@@ -5,6 +5,7 @@ namespace Tests\DI;
 use marcusjian\DI\Component;
 use marcusjian\DI\ComponentWithDefaultConstruct;
 use marcusjian\DI\Context;
+use marcusjian\DI\DependencyNotFoundException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -17,6 +18,7 @@ class ContainerTest extends TestCase
      *     1. no args
      *     2. with dependency
      *     3. A -> B -> C
+     *     4. dependencies not found (sad path)
      *   b. method
      * 2. dependency selection
      * 3. life cycle
@@ -98,6 +100,20 @@ class ContainerTest extends TestCase
         $this->assertNotNull($dependencyWithInjectConstructor);
 
         $this->assertSame($dependency, $dependencyWithInjectConstructor->getDependency());
+    }
+
+    /*
+     * 1. component construction
+     * TODO: instance
+     *   a. constructor
+     *     4. dependencies not found (sad path)
+     */
+    public function testShouldThrowExceptionIfDependencyNotFound()
+    {
+        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
+
+        $this->expectException(DependencyNotFoundException::class);
+        $this->context->get(Component::class);
     }
 }
 

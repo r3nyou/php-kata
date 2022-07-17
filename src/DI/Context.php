@@ -45,9 +45,9 @@ class Context
             public function get()
             {
                 $reflectionClass = new ReflectionClass($this->implementation);
+
                 $dependencies = array_map(function (ReflectionParameter $parameter) {
-                    $type = $parameter->getClass()->getName();
-                    return $this->context->get($type) ?? new $type;
+                    return $this->context->get($parameter->getClass()->getName());
                 }, $reflectionClass->getConstructor()->getParameters());
 
                 return $reflectionClass->newInstanceArgs($dependencies);
@@ -57,11 +57,11 @@ class Context
         $this->providers[$type] = $provider;
     }
 
-    public function get(string $type): ?object
+    public function get(string $type): object
     {
-        if (array_key_exists($type, $this->providers)) {
-            return $this->providers[$type]->get();
+        if (!array_key_exists($type, $this->providers)) {
+            throw new DependencyNotFoundException();
         }
-        return null;
+        return $this->providers[$type]->get();
     }
 }
