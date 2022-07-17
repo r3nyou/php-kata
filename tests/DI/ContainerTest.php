@@ -2,8 +2,6 @@
 
 namespace Tests\DI;
 
-use marcusjian\DI\Component;
-use marcusjian\DI\ComponentWithDefaultConstruct;
 use marcusjian\DI\Context;
 use marcusjian\DI\DependencyNotFoundException;
 use PHPUnit\Framework\TestCase;
@@ -117,8 +115,22 @@ class ContainerTest extends TestCase
     }
 }
 
-interface Dependency {
+interface Component
+{
 
+}
+
+interface Dependency
+{
+
+}
+
+class ComponentWithDefaultConstruct implements Component
+{
+    public function __construct()
+    {
+
+    }
 }
 
 class ComponentWithInjectConstruct implements Component
