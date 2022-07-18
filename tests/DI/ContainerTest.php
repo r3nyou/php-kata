@@ -128,6 +128,16 @@ class ContainerTest extends TestCase
         $this->expectException(CyclicDependenciesException::class);
         $this->context->get(Component::class);
     }
+
+    public function testShouldThrowExceptionIfTransitiveCyclicDependenciesFound()
+    {
+        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->context->bind(Dependency::class, DependencyDependOnAnotherDependency::class);
+        $this->context->bind(AnotherDependency::class, AnotherDependencyDependOnComponent::class);
+
+        $this->expectException(CyclicDependenciesException::class);
+        $this->context->get(Component::class);
+    }
 }
 
 interface Component
@@ -136,6 +146,11 @@ interface Component
 }
 
 interface Dependency
+{
+
+}
+
+interface AnotherDependency
 {
 
 }
@@ -185,5 +200,25 @@ class DependencyDependedOnComponent implements Dependency
     public function __construct(Component $component)
     {
         $this->component = $component;
+    }
+}
+
+class AnotherDependencyDependOnComponent implements AnotherDependency
+{
+    private Component $component;
+
+    public function __construct(Component $component)
+    {
+        $this->component = $component;
+    }
+}
+
+class DependencyDependOnAnotherDependency implements Dependency
+{
+    private AnotherDependency $anotherDependency;
+
+    public function __construct(AnotherDependency $anotherDependency)
+    {
+        $this->anotherDependency = $anotherDependency;
     }
 }
