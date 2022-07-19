@@ -119,6 +119,9 @@ class ContainerTest extends TestCase
         $this->context->get(Component::class);
     }
 
+    /*
+     * sad path
+     */
     public function testShouldThrowExceptionIfTransitiveDependenciesNotFound()
     {
         $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
@@ -143,8 +146,15 @@ class ContainerTest extends TestCase
         $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
         $this->context->bind(Dependency::class, DependencyDependedOnComponent::class);
 
-        $this->expectException(CyclicDependenciesException::class);
-        $this->context->get(Component::class);
+        try {
+            $this->context->get(Component::class);
+        } catch (CyclicDependenciesException $e) {
+            $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
+            $this->assertNotFalse(strrpos($e->getMessage(), Dependency::class));
+            return;
+        }
+
+        $this->fail(CyclicDependenciesException::class . ' is not thrown');
     }
 
     public function testShouldThrowExceptionIfTransitiveCyclicDependenciesFound()
@@ -153,8 +163,16 @@ class ContainerTest extends TestCase
         $this->context->bind(Dependency::class, DependencyDependOnAnotherDependency::class);
         $this->context->bind(AnotherDependency::class, AnotherDependencyDependOnComponent::class);
 
-        $this->expectException(CyclicDependenciesException::class);
-        $this->context->get(Component::class);
+        try {
+            $this->context->get(Component::class);
+        } catch (CyclicDependenciesException $e) {
+            $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
+            $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
+            $this->assertNotFalse(strrpos($e->getMessage(), AnotherDependency::class));
+            return;
+        }
+
+        $this->fail(CyclicDependenciesException::class . ' is not thrown');
     }
 }
 

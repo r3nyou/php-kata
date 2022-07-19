@@ -67,7 +67,7 @@ class ConstructorInjectionProvider implements Provider
     public function get()
     {
         if ($this->constructing) {
-            throw new CyclicDependenciesException();
+            throw new CyclicDependenciesException($this->componentType);
         }
 
         try {
@@ -87,6 +87,8 @@ class ConstructorInjectionProvider implements Provider
             }, $reflectionClass->getConstructor()->getParameters());
 
             return $reflectionClass->newInstanceArgs($dependencies);
+        } catch (CyclicDependenciesException $e) {
+            throw new CyclicDependenciesException($this->componentType, $e);
         } finally {
             $this->constructing = false;
         }
