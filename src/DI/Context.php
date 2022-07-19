@@ -35,7 +35,7 @@ class Context
 
     public function bind(string $type, string $implementation)
     {
-        $this->providers[$type] = new ConstructorInjectionProvider($implementation, $this);
+        $this->providers[$type] = new ConstructorInjectionProvider($type, $implementation, $this);
     }
 
     public function get(string $type): ?object
@@ -49,14 +49,17 @@ class Context
 
 class ConstructorInjectionProvider implements Provider
 {
+    private string $componentType;
+
     private string $implementation;
 
     private Context $context;
 
     private bool $constructing = false;
 
-    public function __construct(string $implementation, Context $context)
+    public function __construct(string $componentType, string $implementation, Context $context)
     {
+        $this->componentType = $componentType;
         $this->implementation = $implementation;
         $this->context = $context;
     }
@@ -74,7 +77,10 @@ class ConstructorInjectionProvider implements Provider
 
             $dependencies = array_map(function (ReflectionParameter $parameter) {
                 if (null === $this->context->get($parameter->getClass()->getName())) {
-                    throw new DependencyNotFoundException();
+                    throw new DependencyNotFoundException(
+                        $this->componentType,
+                        $parameter->getClass()->getName()
+                    );
                 }
 
                 return $this->context->get($parameter->getClass()->getName());

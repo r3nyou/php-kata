@@ -112,6 +112,24 @@ class ContainerTest extends TestCase
         $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
 
         $this->expectException(DependencyNotFoundException::class);
+        $this->expectExceptionMessage(
+            'component: ' . Component::class .
+            ',miss dependency: ' . Dependency::class
+        );
+        $this->context->get(Component::class);
+    }
+
+    public function testShouldThrowExceptionIfTransitiveDependenciesNotFound()
+    {
+        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->context->bind(Dependency::class, DependencyWithInjectConstructor::class);
+
+        $this->expectException(DependencyNotFoundException::class);
+        $this->expectExceptionMessage(
+            'component: ' . Dependency::class .
+            ',miss dependency: ' . stdClass::class
+        );
+
         $this->context->get(Component::class);
     }
 
