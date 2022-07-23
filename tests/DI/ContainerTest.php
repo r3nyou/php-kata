@@ -2,7 +2,7 @@
 
 namespace Tests\DI;
 
-use marcusjian\DI\Context;
+use marcusjian\DI\ContextConfig;
 use marcusjian\DI\CyclicDependenciesException;
 use marcusjian\DI\DependencyNotFoundException;
 use PHPUnit\Framework\TestCase;
@@ -23,11 +23,11 @@ class ContainerTest extends TestCase
      * 3. life cycle
      */
 
-    private Context $context;
+    private ContextConfig $config;
 
     public function setUp(): void
     {
-        $this->context = new Context();
+        $this->config = new ContextConfig();
     }
 
     /*
@@ -37,9 +37,9 @@ class ContainerTest extends TestCase
     public function testShouldBindTypeToSpecificInstance()
     {
         $instance = new class implements Component{};
-        $this->context->bindInstance(Component::class, $instance);
+        $this->config->bindInstance(Component::class, $instance);
 
-        $this->assertSame($instance, $this->context->get(Component::class));
+        $this->assertSame($instance, $this->config->getContext()->get(Component::class));
     }
 
     /*
@@ -50,8 +50,8 @@ class ContainerTest extends TestCase
      */
     public function testShouldBindTypeToClass()
     {
-        $this->context->bind(Component::class, ComponentWithDefaultConstruct::class);
-        $instance = $this->context->get(Component::class);
+        $this->config->bind(Component::class, ComponentWithDefaultConstruct::class);
+        $instance = $this->config->getContext()->get(Component::class);
 
         $this->assertNotNull($instance);
         $this->assertTrue($instance instanceof Component);
@@ -67,11 +67,11 @@ class ContainerTest extends TestCase
     {
         $dependency = new class implements Dependency{};
 
-        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
-        $this->context->bindInstance(Dependency::class, $dependency);
+        $this->config->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->config->bindInstance(Dependency::class, $dependency);
 
         /** @var ComponentWithInjectConstruct $instance */
-        $instance = $this->context->get(Component::class);
+        $instance = $this->config->getContext()->get(Component::class);
         $this->assertNotNull($instance);
         $this->assertSame($dependency, $instance->getDependency());
     }
@@ -86,12 +86,12 @@ class ContainerTest extends TestCase
     {
         $dependency = new stdClass();
 
-        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
-        $this->context->bind(Dependency::class, DependencyWithInjectConstructor::class);
-        $this->context->bindInstance(stdClass::class, $dependency);
+        $this->config->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->config->bind(Dependency::class, DependencyWithInjectConstructor::class);
+        $this->config->bindInstance(stdClass::class, $dependency);
 
         /** @var ComponentWithInjectConstruct $instance */
-        $instance = $this->context->get(Component::class);
+        $instance = $this->config->getContext()->get(Component::class);
         $this->assertNotNull($instance);
 
         /** @var DependencyWithInjectConstructor $dependencyWithInjectConstructor */
@@ -109,14 +109,14 @@ class ContainerTest extends TestCase
      */
     public function testShouldThrowExceptionIfDependencyNotFound()
     {
-        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->config->bind(Component::class, ComponentWithInjectConstruct::class);
 
         $this->expectException(DependencyNotFoundException::class);
         $this->expectExceptionMessage(
             'component: ' . Component::class .
             ',miss dependency: ' . Dependency::class
         );
-        $this->context->get(Component::class);
+        $this->config->getContext()->get(Component::class);
     }
 
     /*
@@ -124,8 +124,8 @@ class ContainerTest extends TestCase
      */
     public function testShouldThrowExceptionIfTransitiveDependenciesNotFound()
     {
-        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
-        $this->context->bind(Dependency::class, DependencyWithInjectConstructor::class);
+        $this->config->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->config->bind(Dependency::class, DependencyWithInjectConstructor::class);
 
         $this->expectException(DependencyNotFoundException::class);
         $this->expectExceptionMessage(
@@ -133,21 +133,21 @@ class ContainerTest extends TestCase
             ',miss dependency: ' . stdClass::class
         );
 
-        $this->context->get(Component::class);
+        $this->config->getContext()->get(Component::class);
     }
 
     public function testShouldReturnNullIfComponentNotDefined()
     {
-        $this->assertNull($this->context->get(Component::class));
+        $this->assertNull($this->config->getContext()->get(Component::class));
     }
 
     public function testShouldThrowExceptionIfCyclicDependenciesFound()
     {
-        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
-        $this->context->bind(Dependency::class, DependencyDependedOnComponent::class);
+        $this->config->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->config->bind(Dependency::class, DependencyDependedOnComponent::class);
 
         try {
-            $this->context->get(Component::class);
+            $this->config->getContext()->get(Component::class);
         } catch (CyclicDependenciesException $e) {
             $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
             $this->assertNotFalse(strrpos($e->getMessage(), Dependency::class));
@@ -159,12 +159,13 @@ class ContainerTest extends TestCase
 
     public function testShouldThrowExceptionIfTransitiveCyclicDependenciesFound()
     {
-        $this->context->bind(Component::class, ComponentWithInjectConstruct::class);
-        $this->context->bind(Dependency::class, DependencyDependOnAnotherDependency::class);
-        $this->context->bind(AnotherDependency::class, AnotherDependencyDependOnComponent::class);
+        $this->config->bind(Component::class, ComponentWithInjectConstruct::class);
+        $this->config->bind(Dependency::class, DependencyDependOnAnotherDependency::class);
+        $this->config->bind(AnotherDependency::class, AnotherDependencyDependOnComponent::class);
 
         try {
-            $this->context->get(Component::class);
+            $contextConfig = $this->config;
+            $contextConfig->getContext()->get(Component::class);
         } catch (CyclicDependenciesException $e) {
             $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
             $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
