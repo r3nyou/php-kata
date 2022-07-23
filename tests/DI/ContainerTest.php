@@ -116,7 +116,7 @@ class ContainerTest extends TestCase
             'component: ' . Component::class .
             ',miss dependency: ' . Dependency::class
         );
-        $this->config->getContext()->get(Component::class);
+        $this->config->getContext();
     }
 
     /*

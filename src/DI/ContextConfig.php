@@ -13,6 +13,11 @@ class ContextConfig
     private array $providers = [];
 
     /**
+     * @var array<string,string[]>
+     */
+    private array $dependencies = [];
+
+    /**
      * @param string $type
      * @param object $instance
      *
@@ -31,16 +36,29 @@ class ContextConfig
                 return $this->instance;
             }
         };
+
+        $this->dependencies[$type] = [];
     }
 
     public function bind(string $type, string $implementation)
     {
         $this->providers[$type] = new ConstructorInjectionProvider($type, $implementation, $this);
+
+        $this->dependencies[$type] = array_map(function (ReflectionParameter $parameter) {
+            return $parameter->getClass()->getName();
+        }, (new ReflectionClass($implementation))->getConstructor()
+            ->getParameters());
     }
 
     public function getContext(): Context
     {
-        // can check dependency here
+        foreach ($this->dependencies as $component => $dependencies) {
+            foreach ($dependencies as $dependency) {
+                if (!array_key_exists($dependency, $this->dependencies)) {
+                    throw new DependencyNotFoundException($component, $dependency);
+                }
+            }
+        }
 
         return new class($this) implements Context
         {
