@@ -11,15 +11,6 @@ class CyclicDependenciesException extends Exception
      */
     private array $components = [];
 
-    public function __construct(string $componentType, CyclicDependenciesException $e = null)
-    {
-        if (null !== $e) {
-            $this->components = $e->getComponents();
-        }
-        $this->components[] = $componentType;
-        $this->message = $this->getCustomMessage();
-    }
-
     public static function createFromArray(array $componentTypes)
     {
         $exception = new static('');

@@ -13,11 +13,6 @@ class ContextConfig
     private array $providers = [];
 
     /**
-     * @var array<string,string[]>
-     */
-    private array $dependencies = [];
-
-    /**
      * @param string $type
      * @param object $instance
      *
@@ -35,24 +30,22 @@ class ContextConfig
             {
                 return $this->instance;
             }
-        };
 
-        $this->dependencies[$type] = [];
+            public function getDependencies(): array
+            {
+                return [];
+            }
+        };
     }
 
     public function bind(string $type, string $implementation)
     {
-        $this->providers[$type] = new ConstructorInjectionProvider($type, $implementation, $this);
-
-        $this->dependencies[$type] = array_map(function (ReflectionParameter $parameter) {
-            return $parameter->getClass()->getName();
-        }, (new ReflectionClass($implementation))->getConstructor()
-            ->getParameters());
+        $this->providers[$type] = ConstructorInjectionProvider::getConstructor($implementation, $this);
     }
 
     public function getContext(): Context
     {
-        foreach ($this->dependencies as $component => $dependencies) {
+        foreach ($this->providers as $component => $dependencies) {
             $this->checkDependencies($component, []);
         }
 
@@ -89,9 +82,9 @@ class ContextConfig
 
     public function checkDependencies(string $component, array $visitStack)
     {
-        $dependencies = $this->dependencies[$component];
+        $dependencies = $this->providers[$component]->getDependencies();
         foreach ($dependencies as $dependency) {
-            if (!array_key_exists($dependency, $this->dependencies)) {
+            if (!array_key_exists($dependency, $this->providers)) {
                 throw new DependencyNotFoundException($component, $dependency);
             }
             if (in_array($dependency, $visitStack)) {
@@ -106,48 +99,36 @@ class ContextConfig
 
 class ConstructorInjectionProvider implements Provider
 {
-    private string $componentType;
-
     private string $implementation;
 
     private ContextConfig $config;
 
-    private bool $constructing = false;
-
-    public function __construct(string $componentType, string $implementation, ContextConfig $config)
+    public function __construct(string $implementation, ContextConfig $config)
     {
-        $this->componentType = $componentType;
         $this->implementation = $implementation;
         $this->config = $config;
     }
 
+    public static function getConstructor(string $implementation, ContextConfig $config): ConstructorInjectionProvider {
+        return new ConstructorInjectionProvider($implementation, $config);
+    }
+
     public function get()
     {
-        if ($this->constructing) {
-            throw new CyclicDependenciesException($this->componentType);
-        }
+        $reflectionClass = new ReflectionClass($this->implementation);
 
-        try {
-            $this->constructing = true;
+        $dependencies = array_map(function (ReflectionParameter $parameter) {
+            return $this->config->getContext()->get($parameter->getClass()->getName());
+        }, $reflectionClass->getConstructor()->getParameters());
 
-            $reflectionClass = new ReflectionClass($this->implementation);
+        return $reflectionClass->newInstanceArgs($dependencies);
+    }
 
-            $dependencies = array_map(function (ReflectionParameter $parameter) {
-                if (null === $this->config->getContext()->get($parameter->getClass()->getName())) {
-                    throw new DependencyNotFoundException(
-                        $this->componentType,
-                        $parameter->getClass()->getName()
-                    );
-                }
-
-                return $this->config->getContext()->get($parameter->getClass()->getName());
-            }, $reflectionClass->getConstructor()->getParameters());
-
-            return $reflectionClass->newInstanceArgs($dependencies);
-        } catch (CyclicDependenciesException $e) {
-            throw new CyclicDependenciesException($this->componentType, $e);
-        } finally {
-            $this->constructing = false;
-        }
+    public function getDependencies(): array
+    {
+        return array_map(function (ReflectionParameter $parameter) {
+            return $parameter->getClass()->getName();
+        }, (new ReflectionClass($this->implementation))->getConstructor()
+               ->getParameters());
     }
 }
