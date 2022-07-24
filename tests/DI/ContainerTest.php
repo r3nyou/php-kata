@@ -133,7 +133,7 @@ class ContainerTest extends TestCase
             ',miss dependency: ' . stdClass::class
         );
 
-        $this->config->getContext()->get(Component::class);
+        $this->config->getContext();
     }
 
     public function testShouldReturnNullIfComponentNotDefined()
@@ -147,7 +147,7 @@ class ContainerTest extends TestCase
         $this->config->bind(Dependency::class, DependencyDependedOnComponent::class);
 
         try {
-            $this->config->getContext()->get(Component::class);
+            $this->config->getContext();
         } catch (CyclicDependenciesException $e) {
             $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
             $this->assertNotFalse(strrpos($e->getMessage(), Dependency::class));
@@ -164,8 +164,7 @@ class ContainerTest extends TestCase
         $this->config->bind(AnotherDependency::class, AnotherDependencyDependOnComponent::class);
 
         try {
-            $contextConfig = $this->config;
-            $contextConfig->getContext()->get(Component::class);
+            $this->config->getContext();
         } catch (CyclicDependenciesException $e) {
             $this->assertNotFalse(strrpos($e->getMessage(), Component::class));
             $this->assertNotFalse(strrpos($e->getMessage(), Component::class));

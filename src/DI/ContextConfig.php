@@ -53,11 +53,7 @@ class ContextConfig
     public function getContext(): Context
     {
         foreach ($this->dependencies as $component => $dependencies) {
-            foreach ($dependencies as $dependency) {
-                if (!array_key_exists($dependency, $this->dependencies)) {
-                    throw new DependencyNotFoundException($component, $dependency);
-                }
-            }
+            $this->checkDependencies($component, []);
         }
 
         return new class($this) implements Context
@@ -89,6 +85,22 @@ class ContextConfig
     public function getProvider(string $type): ?Provider
     {
         return $this->providers[$type] ?? null;
+    }
+
+    public function checkDependencies(string $component, array $visitStack)
+    {
+        $dependencies = $this->dependencies[$component];
+        foreach ($dependencies as $dependency) {
+            if (!array_key_exists($dependency, $this->dependencies)) {
+                throw new DependencyNotFoundException($component, $dependency);
+            }
+            if (in_array($dependency, $visitStack)) {
+                throw CyclicDependenciesException::createFromArray($visitStack);
+            }
+            array_push($visitStack, $dependency);
+            $this->checkDependencies($dependency, $visitStack);
+            array_pop($visitStack);
+        }
     }
 }
 

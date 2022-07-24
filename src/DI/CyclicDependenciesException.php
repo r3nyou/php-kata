@@ -20,6 +20,15 @@ class CyclicDependenciesException extends Exception
         $this->message = $this->getCustomMessage();
     }
 
+    public static function createFromArray(array $componentTypes)
+    {
+        $exception = new static('');
+        $exception->components = $componentTypes;
+        $exception->message = $exception->getCustomMessage();
+
+        return $exception;
+    }
+
     public function getComponents(): array
     {
         return $this->components;
