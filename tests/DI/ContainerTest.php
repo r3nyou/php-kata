@@ -213,6 +213,14 @@ class ContainerTest extends TestCase
         $this->assertEquals(1, $component->superCalled);
         $this->assertEquals(2, $component->subCalled);
     }
+
+    public function testShouldCallOnceIfSubclassOverrideInjectMethod()
+    {
+        $this->config->bind(SubClassOverrideSuperClassWithInject::class, SubClassOverrideSuperClassWithInject::class);
+        $component = $this->config->getContext()->get(SubClassOverrideSuperClassWithInject::class);
+
+        $this->assertEquals(1, $component->superCalled);
+    }
 }
 
 interface Component
@@ -335,5 +343,16 @@ class SubClassWithInjectMethod extends SuperClassWithInjectMethod
     public function installAnother()
     {
         $this->subCalled = $this->superCalled + 1;
+    }
+}
+
+class SubClassOverrideSuperClassWithInject extends SuperClassWithInjectMethod
+{
+    /**
+     * override
+     */
+    public function install()
+    {
+        parent::install();
     }
 }
