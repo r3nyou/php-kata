@@ -117,18 +117,29 @@ class ConstructorInjectionProvider implements Provider
     {
         $reflectionClass = new ReflectionClass($this->implementation);
 
-        $dependencies = array_map(function (ReflectionParameter $parameter) {
-            return $this->config->getContext()->get($parameter->getClass()->getName());
-        }, $reflectionClass->getConstructor()->getParameters());
+        $instance = $reflectionClass->newInstanceWithoutConstructor();
 
-        return $reflectionClass->newInstanceArgs($dependencies);
+        foreach ($reflectionClass->getMethods() as $reflectionMethod) {
+            $dependencies = array_map(function (ReflectionParameter $parameter) {
+                return $this->config->getContext()->get($parameter->getClass()->getName());
+            }, $reflectionMethod->getParameters());
+
+            $reflectionMethod->invoke($instance, ...$dependencies);
+        }
+
+        return $instance;
     }
 
     public function getDependencies(): array
     {
-        return array_map(function (ReflectionParameter $parameter) {
-            return $parameter->getClass()->getName();
-        }, (new ReflectionClass($this->implementation))->getConstructor()
-               ->getParameters());
+        $dependencies = [];
+        $reflectionClass = new ReflectionClass($this->implementation);
+        foreach ($reflectionClass->getMethods() as $reflectionMethod) {
+            $dependencies = array_merge($dependencies, array_map(function (ReflectionParameter $parameter) {
+                return $parameter->getClass()->getName();
+            }, $reflectionMethod->getParameters()));
+        }
+
+        return $dependencies;
     }
 }

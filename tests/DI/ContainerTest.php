@@ -2,6 +2,7 @@
 
 namespace Tests\DI;
 
+use marcusjian\DI\ConstructorInjectionProvider;
 use marcusjian\DI\ContextConfig;
 use marcusjian\DI\CyclicDependenciesException;
 use marcusjian\DI\DependencyNotFoundException;
@@ -174,6 +175,35 @@ class ContainerTest extends TestCase
 
         $this->fail(CyclicDependenciesException::class . ' is not thrown');
     }
+
+    /*
+     * 1. component construction
+     * TODO: instance
+     *   b. method
+     */
+    public function testShouldCallInjectMethodEvenNoDependencyDeclared()
+    {
+        $this->config->bind(InjectMethodNoDependency::class, InjectMethodNoDependency::class);
+        $component = $this->config->getContext()->get(InjectMethodNoDependency::class);
+
+        $this->assertTrue($component->called);
+    }
+
+    public function testShouldInjectDependencyViaMethod()
+    {
+        $dependency = new class implements Dependency{};
+        $this->config->bindInstance(Dependency::class, $dependency);
+        $this->config->bind(ComponentWithMethodInject::class, ComponentWithMethodInject::class);
+
+        $instance = $this->config->getContext()->get(ComponentWithMethodInject::class);
+        $this->assertSame($dependency, $instance->dependency);
+    }
+
+    public function testShouldIncludeMethodDependencyInDependencies()
+    {
+        $provider = new ConstructorInjectionProvider(ComponentWithMethodInject::class, $this->config);
+        $this->assertSame([Dependency::class], $provider->getDependencies());
+    }
 }
 
 interface Component
@@ -256,5 +286,25 @@ class DependencyDependOnAnotherDependency implements Dependency
     public function __construct(AnotherDependency $anotherDependency)
     {
         $this->anotherDependency = $anotherDependency;
+    }
+}
+
+class InjectMethodNoDependency
+{
+    public bool $called = false;
+    
+    public function install(): void
+    {
+        $this->called = true;
+    }
+}
+
+class ComponentWithMethodInject implements Component
+{
+    public Dependency $dependency;
+
+    public function install(Dependency $dependency): void
+    {
+        $this->dependency = $dependency;
     }
 }
