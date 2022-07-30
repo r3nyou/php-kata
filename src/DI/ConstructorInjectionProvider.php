@@ -28,11 +28,23 @@ class ConstructorInjectionProvider implements Provider
         $instance = $reflectionClass->newInstanceWithoutConstructor();
 
         foreach ($reflectionClass->getMethods() as $reflectionMethod) {
-            $dependencies = array_map(function (ReflectionParameter $parameter) {
-                return $this->config->getContext()->get($parameter->getClass()->getName());
-            }, $reflectionMethod->getParameters());
+            if ("__construct" === $reflectionMethod->getName()) {
+                $dependencies = array_map(function (ReflectionParameter $parameter) {
+                    return $this->config->getContext()->get($parameter->getClass()->getName());
+                }, $reflectionMethod->getParameters());
 
-            $reflectionMethod->invoke($instance, ...$dependencies);
+                $reflectionMethod->invoke($instance, ...$dependencies);
+            }
+        }
+
+        foreach (array_reverse($reflectionClass->getMethods()) as $reflectionMethod) {
+            if ("__construct" !== $reflectionMethod->getName()) {
+                $dependencies = array_map(function (ReflectionParameter $parameter) {
+                    return $this->config->getContext()->get($parameter->getClass()->getName());
+                }, $reflectionMethod->getParameters());
+
+                $reflectionMethod->invoke($instance, ...$dependencies);
+            }
         }
 
         return $instance;
@@ -43,11 +55,13 @@ class ConstructorInjectionProvider implements Provider
         $dependencies = [];
         $reflectionClass = new ReflectionClass($this->implementation);
         foreach ($reflectionClass->getMethods() as $reflectionMethod) {
-            $dependencies = array_merge($dependencies, array_map(function (ReflectionParameter $parameter) {
-                return $parameter->getClass()->getName();
-            }, $reflectionMethod->getParameters()));
+            $dependencies = array_merge(
+                $dependencies,
+                array_map(function (ReflectionParameter $parameter) {
+                    return $parameter->getClass()->getName();
+                }, $reflectionMethod->getParameters())
+            );
         }
-
         return $dependencies;
     }
 }

@@ -204,6 +204,15 @@ class ContainerTest extends TestCase
         $provider = new ConstructorInjectionProvider(ComponentWithMethodInject::class, $this->config);
         $this->assertSame([Dependency::class], $provider->getDependencies());
     }
+
+    public function testShouldInjectDependenciesViaMethodFromSuperClass()
+    {
+        $this->config->bind(SubClassWithInjectMethod::class, SubClassWithInjectMethod::class);
+        $component = $this->config->getContext()->get(SubClassWithInjectMethod::class);
+
+        $this->assertEquals(1, $component->superCalled);
+        $this->assertEquals(2, $component->subCalled);
+    }
 }
 
 interface Component
@@ -306,5 +315,25 @@ class ComponentWithMethodInject implements Component
     public function install(Dependency $dependency): void
     {
         $this->dependency = $dependency;
+    }
+}
+
+class SuperClassWithInjectMethod
+{
+    public int $superCalled = 0;
+
+    public function install()
+    {
+        $this->superCalled++;
+    }
+}
+
+class SubClassWithInjectMethod extends SuperClassWithInjectMethod
+{
+    public int $subCalled = 0;
+
+    public function installAnother()
+    {
+        $this->subCalled = $this->superCalled + 1;
     }
 }
